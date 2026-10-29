@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crecer emitiendo menos</title>
+<meta name="description" content="Connected scatterplot: PIB per cápita frente a emisiones de CO₂ per cápita en España, 1960–2022.">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  .path-line { fill: none; stroke: var(--text-muted); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; opacity: .7; }
+  .pt { stroke: var(--ring); stroke-width: 2; cursor: pointer; }
+  .pt.active { stroke: var(--text-primary); stroke-width: 2.5; }
+  .arrow { fill: var(--text-muted); opacity: .85; }
+  .yr-label { font-size: 12px; font-weight: 600; fill: var(--text-primary); paint-order: stroke; stroke: var(--surface-1); stroke-width: 4px; stroke-linejoin: round; }
+  .phase { font-size: 12px; fill: var(--text-secondary); }
+  .phase tspan.h { font-weight: 600; fill: var(--text-primary); }
+  .peak-line { stroke: var(--text-muted); stroke-dasharray: 3 4; stroke-width: 1; }
+  .gradient-legend { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text-secondary); }
+  .gradient-legend .bar { width: 140px; height: 10px; border-radius: 5px; }
+</style>
+</head>
+<body>
+<main class="page">
+  <div class="crumb"><a href="../">PEC 2 · Visualización de datos</a> › Connected scatterplot</div>
+  <p class="eyebrow">Técnica 3 · Connected scatterplot</p>
+  <h1>España crece hoy como en 2007, pero emite un 40 % menos de CO₂ por habitante</h1>
+  <p class="lede">Cada punto es un año. Su posición horizontal indica el PIB per cápita y la vertical, las emisiones de CO₂ per cápita; la línea une los años en orden cronológico para mostrar la <b>trayectoria</b> conjunta de ambas variables entre 1960 y 2022.</p>
+
+  <section class="card">
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Modo de visualización">
+        <button type="button" id="btn-full" aria-pressed="true">Recorrido completo</button>
+        <button type="button" id="btn-play" aria-pressed="false">▶ Animar 1960 → 2022</button>
+      </div>
+      <div class="gradient-legend" aria-hidden="true">
+        <span>1960</span><span class="bar" id="grad-bar"></span><span>2022</span>
+        <span style="margin-left:6px">color del punto = año</span>
+      </div>
+    </div>
+    <div class="chart" id="chart"><div class="tooltip" id="tip"></div></div>
+  </section>
+
+  <div class="notes">
+    <div class="note"><h3>1960–1975 · Desarrollismo</h3><p>El PIB per cápita se multiplica por 2,5 y las emisiones por 3,1: la trayectoria sube casi en diagonal (crecimiento <b>acoplado</b>).</p></div>
+    <div class="note"><h3>1975–1986 · Crisis del petróleo</h3><p>El PIB apenas avanza y las emisiones se estancan y bajan: la línea se vuelve casi horizontal y luego retrocede.</p></div>
+    <div class="note"><h3>1986–2005 · UE y expansión</h3><p>Ambas variables vuelven a crecer juntas hasta el máximo histórico de emisiones: <b>8,4 t por habitante en 2005</b>.</p></div>
+    <div class="note"><h3>2005–2022 · Desacoplamiento</h3><p>La trayectoria gira hacia abajo: en 2019 el PIB per cápita superaba en un 13 % al de 2005 con un 37 % menos de emisiones. La COVID-19 (2020) provoca el salto en diagonal hacia abajo a la izquierda.</p></div>
+  </div>
+
+  <details class="table">
+    <summary>Ver los datos en tabla (63 años)</summary>
+    <div class="wrap"><table id="tbl"><thead><tr><th>Año</th><th>PIB per cápita ($ int. 2011)</th><th>CO₂ per cápita (t)</th></tr></thead><tbody></tbody></table></div>
+  </details>
+
+  <p class="source">Fuente: Our World in Data, <a href="https://github.com/owid/co2-data" target="_blank" rel="noopener">CO₂ and Greenhouse Gas Emissions dataset</a> (variables <i>gdp</i>, <i>population</i> y <i>co2_per_capita</i>). PIB: Maddison Project Database 2023, en dólares internacionales de 2011 (ajustado por inflación y paridad de poder adquisitivo). CO₂: Global Carbon Budget 2025, emisiones de combustibles fósiles e industria, sin cambios de uso del suelo. PIB per cápita = gdp / population. <a href="../datos/espana_pib_co2_1960_2022.csv">Descargar CSV</a>.</p>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+const DATA = [{"y":1960,"pib":5071,"co2":1.61},{"y":1961,"pib":5619,"co2":1.75},{"y":1962,"pib":6099,"co2":1.93},{"y":1963,"pib":6642,"co2":1.87},{"y":1964,"pib":6938,"co2":2.03},{"y":1965,"pib":7406,"co2":2.21},{"y":1966,"pib":7869,"co2":2.39},{"y":1967,"pib":8214,"co2":2.63},{"y":1968,"pib":8617,"co2":2.92},{"y":1969,"pib":9318,"co2":2.89},{"y":1970,"pib":9521,"co2":3.45},{"y":1971,"pib":9897,"co2":3.76},{"y":1972,"pib":10779,"co2":4.19},{"y":1973,"pib":11600,"co2":4.44},{"y":1974,"pib":12318,"co2":4.88},{"y":1975,"pib":12531,"co2":5.06},{"y":1976,"pib":12980,"co2":5.47},{"y":1977,"pib":13294,"co2":5.33},{"y":1978,"pib":13553,"co2":5.41},{"y":1979,"pib":13667,"co2":5.45},{"y":1980,"pib":13988,"co2":5.7},{"y":1981,"pib":13873,"co2":5.45},{"y":1982,"pib":14023,"co2":5.48},{"y":1983,"pib":14215,"co2":5.32},{"y":1984,"pib":14286,"co2":5.14},{"y":1985,"pib":14672,"co2":5.18},{"y":1986,"pib":15232,"co2":4.88},{"y":1987,"pib":16285,"co2":4.88},{"y":1988,"pib":17321,"co2":5.07},{"y":1989,"pib":18447,"co2":5.76},{"y":1990,"pib":19346,"co2":5.87},{"y":1991,"pib":20069,"co2":6.1},{"y":1992,"pib":20377,"co2":6.28},{"y":1993,"pib":20030,"co2":6.03},{"y":1994,"pib":20576,"co2":6.31},{"y":1995,"pib":21347,"co2":6.62},{"y":1996,"pib":21995,"co2":6.28},{"y":1997,"pib":22905,"co2":6.55},{"y":1998,"pib":24049,"co2":6.74},{"y":1999,"pib":25278,"co2":7.28},{"y":2000,"pib":26694,"co2":7.54},{"y":2001,"pib":27832,"co2":7.54},{"y":2002,"pib":28531,"co2":7.93},{"y":2003,"pib":29164,"co2":7.89},{"y":2004,"pib":29833,"co2":8.14},{"y":2005,"pib":30684,"co2":8.36},{"y":2006,"pib":31675,"co2":8.03},{"y":2007,"pib":32541,"co2":8.05},{"y":2008,"pib":32673,"co2":7.25},{"y":2009,"pib":31495,"co2":6.35},{"y":2010,"pib":31605,"co2":6.03},{"y":2011,"pib":31431,"co2":6.03},{"y":2012,"pib":30488,"co2":5.9},{"y":2013,"pib":30161,"co2":5.38},{"y":2014,"pib":30674,"co2":5.43},{"y":2015,"pib":31876,"co2":5.79},{"y":2016,"pib":32810,"co2":5.55},{"y":2017,"pib":33688,"co2":5.83},{"y":2018,"pib":34294,"co2":5.7},{"y":2019,"pib":34722,"co2":5.29},{"y":2020,"pib":30632,"co2":4.44},{"y":2021,"pib":32284,"co2":4.79},{"y":2022,"pib":33979,"co2":4.9}];
+
+// Años etiquetados directamente (no todos: selectivo) y su desplazamiento [dx, dy]
+const LABELS = {1960:[8,14],1970:[10,14],1975:[-38,-8],1986:[-8,18],1993:[8,16],2005:[-14,-12],2008:[10,-4],2013:[-40,10],2019:[10,4],2020:[-40,10],2022:[10,12]};
+
+const fmtPib = d3.format(",.0f"), fmtCo2 = d3.format(".2f");
+const es = d3.formatLocale({decimal: ",", thousands: ".", grouping: [3], currency: ["", " $"]});
+const fPib = es.format(",.0f"), fCo2 = es.format(".2f");
+
+// Rampa secuencial azul (paso 250 → 700) para codificar el tiempo de forma redundante
+const RAMP = ["#86b6ef","#6da7ec","#5598e7","#3987e5","#2a78d6","#256abf","#1c5cab","#184f95","#104281","#0d366b"];
+// En modo oscuro la rampa se invierte de luminosidad: los años recientes, más claros, siguen siendo los más visibles
+const RAMP_DARK = ["#1c5cab","#256abf","#2a78d6","#3987e5","#5598e7","#6da7ec","#86b6ef","#9ec5f4","#b7d3f6","#cde2fb"];
+const darkMQ = window.matchMedia("(prefers-color-scheme: dark)");
+const isDark = () => document.documentElement.dataset.theme === "dark" || (document.documentElement.dataset.theme !== "light" && darkMQ.matches);
+const color = d3.scaleQuantize().domain([1960, 2022]);
+function applyRamp() {
+  const r = isDark() ? RAMP_DARK : RAMP;
+  color.range(r);
+  document.getElementById("grad-bar").style.background = `linear-gradient(90deg, ${r.join(",")})`;
+  if (typeof pts !== "undefined") pts.attr("fill", d => color(d.y));
+}
+applyRamp();
+darkMQ.addEventListener("change", applyRamp);
+new MutationObserver(applyRamp).observe(document.documentElement, {attributes: true, attributeFilter: ["data-theme"]});
+
+const W = 960, H = 560, M = {top: 20, right: 30, bottom: 56, left: 64};
+const svg = d3.select("#chart").append("svg").attr("viewBox", `0 0 ${W} ${H}`)
+  .attr("role", "img").attr("aria-label", "Connected scatterplot del PIB per cápita frente al CO2 per cápita en España, 1960-2022");
+
+const x = d3.scaleLinear().domain([4000, 36000]).range([M.left, W - M.right]);
+const y = d3.scaleLinear().domain([0, 9]).range([H - M.bottom, M.top]);
+
+svg.append("g").attr("class", "grid").attr("transform", `translate(0,${H - M.bottom})`)
+  .call(d3.axisBottom(x).ticks(8).tickSize(-(H - M.top - M.bottom)).tickFormat(""));
+svg.append("g").attr("class", "grid").attr("transform", `translate(${M.left},0)`)
+  .call(d3.axisLeft(y).ticks(9).tickSize(-(W - M.left - M.right)).tickFormat(""));
+svg.append("g").attr("class", "axis").attr("transform", `translate(0,${H - M.bottom})`)
+  .call(d3.axisBottom(x).ticks(8).tickFormat(d => fPib(d) + " $").tickSizeOuter(0));
+svg.append("g").attr("class", "axis").attr("transform", `translate(${M.left},0)`)
+  .call(d3.axisLeft(y).ticks(9).tickFormat(d => d + " t").tickSizeOuter(0));
+svg.append("text").attr("class", "axis-title").attr("x", W - M.right).attr("y", H - 14).attr("text-anchor", "end")
+  .text("PIB per cápita → (dólares internacionales de 2011)");
+svg.append("text").attr("class", "axis-title").attr("transform", `translate(16,${M.top})rotate(-90)`).attr("text-anchor", "end")
+  .text("CO₂ per cápita → (toneladas por persona)");
+
+// Línea de referencia: máximo de emisiones (2005)
+const peak = DATA.find(d => d.y === 2005);
+svg.append("line").attr("class", "peak-line").attr("x1", M.left).attr("x2", W - M.right).attr("y1", y(peak.co2)).attr("y2", y(peak.co2));
+svg.append("text").attr("class", "phase").attr("x", M.left + 8).attr("y", y(peak.co2) - 6).text("Máximo histórico: 8,36 t por habitante (2005)");
+
+// Anotaciones de fases (texto recesivo, junto a la trayectoria)
+const phases = [
+  {x: 4500, y: 4.75, h: "1960–75", t: "crecimiento acoplado"},
+  {x: 11300, y: 6.6, h: "1975–86", t: "crisis: emisiones planas"},
+  {x: 17200, y: 7.4, h: "1986–2005", t: "ambas suben de nuevo"},
+  {x: 24600, y: 3.9, h: "2005–22", t: "desacoplamiento: más PIB, menos CO₂"}
+];
+phases.forEach(p => {
+  const t = svg.append("text").attr("class", "phase").attr("x", x(p.x)).attr("y", y(p.y));
+  t.append("tspan").attr("class", "h").text(p.h + " ");
+  t.append("tspan").text(p.t);
+});
+
+const gLine = svg.append("g"), gArrows = svg.append("g"), gPts = svg.append("g"), gLbl = svg.append("g");
+const line = d3.line().x(d => x(d.pib)).y(d => y(d.co2));
+const path = gLine.append("path").datum(DATA).attr("class", "path-line").attr("d", line);
+const totalLen = path.node().getTotalLength();
+
+// Flechas de dirección en el punto medio de algunos tramos (indican el sentido del tiempo)
+const ARROW_AT = [1963, 1971, 1979, 1988, 1997, 2003, 2008, 2012, 2016, 2019, 2020];
+ARROW_AT.forEach(yr => {
+  const i = DATA.findIndex(d => d.y === yr), a = DATA[i], b = DATA[i + 1];
+  const x1 = x(a.pib), y1 = y(a.co2), x2 = x(b.pib), y2 = y(b.co2);
+  const ang = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+  gArrows.append("path").attr("class", "arrow").attr("data-year", yr)
+    .attr("d", "M-5,-4 L5,0 L-5,4 Z")
+    .attr("transform", `translate(${(x1 + x2) / 2},${(y1 + y2) / 2}) rotate(${ang})`);
+});
+
+var pts = gPts.selectAll("circle").data(DATA).join("circle")
+  .attr("class", "pt").attr("cx", d => x(d.pib)).attr("cy", d => y(d.co2))
+  .attr("r", 5).attr("fill", d => color(d.y));
+
+const lbls = gLbl.selectAll("text").data(DATA.filter(d => LABELS[d.y])).join("text")
+  .attr("class", "yr-label")
+  .attr("x", d => x(d.pib) + LABELS[d.y][0]).attr("y", d => y(d.co2) + LABELS[d.y][1])
+  .text(d => d.y);
+
+// Capa de interacción: tooltip al punto más cercano (Delaunay), objetivo mayor que la marca
+const tip = d3.select("#tip");
+const delaunay = d3.Delaunay.from(DATA, d => x(d.pib), d => y(d.co2));
+svg.append("rect").attr("x", M.left).attr("y", M.top).attr("width", W - M.left - M.right).attr("height", H - M.top - M.bottom)
+  .attr("fill", "transparent")
+  .on("pointermove", ev => {
+    const [mx, my] = d3.pointer(ev);
+    const i = delaunay.find(mx, my), d = DATA[i];
+    if (Math.hypot(x(d.pib) - mx, y(d.co2) - my) > 40) return hide();
+    pts.classed("active", p => p === d).attr("r", p => p === d ? 7 : 5);
+    const prev = DATA[i - 1];
+    const delta = prev ? `<br><span class="muted">vs ${prev.y}: PIB ${d.pib >= prev.pib ? "+" : ""}${es.format(".1f")((d.pib / prev.pib - 1) * 100)} % · CO₂ ${d.co2 >= prev.co2 ? "+" : ""}${es.format(".1f")((d.co2 / prev.co2 - 1) * 100)} %</span>` : "";
+    tip.html(`<b>${d.y}</b><br>PIB per cápita: <b>${fPib(d.pib)} $</b><br>CO₂ per cápita: <b>${fCo2(d.co2)} t</b>${delta}`);
+    const box = document.getElementById("chart").getBoundingClientRect(), s = box.width / W;
+    let left = x(d.pib) * s + 14, top = y(d.co2) * s - 20;
+    if (left + 230 > box.width) left = x(d.pib) * s - 244;
+    tip.style("left", left + "px").style("top", top + "px").style("opacity", 1);
+  })
+  .on("pointerleave", hide);
+function hide() { tip.style("opacity", 0); pts.classed("active", false).attr("r", 5); }
+
+// Animación: dibuja la trayectoria año a año (útil para narrar la secuencia)
+const btnFull = document.getElementById("btn-full"), btnPlay = document.getElementById("btn-play");
+function showAll() {
+  path.interrupt().attr("stroke-dasharray", null).attr("stroke-dashoffset", null);
+  pts.interrupt().attr("opacity", 1); lbls.interrupt().attr("opacity", 1); gArrows.selectAll("path").interrupt().attr("opacity", .85);
+  btnFull.setAttribute("aria-pressed", "true"); btnPlay.setAttribute("aria-pressed", "false");
+}
+function play() {
+  btnFull.setAttribute("aria-pressed", "false"); btnPlay.setAttribute("aria-pressed", "true");
+  const dur = 9000, n = DATA.length - 1;
+  // longitud acumulada hasta cada punto, para sincronizar puntos con la línea
+  const cum = [0];
+  for (let i = 1; i < DATA.length; i++) cum.push(cum[i - 1] + Math.hypot(x(DATA[i].pib) - x(DATA[i - 1].pib), y(DATA[i].co2) - y(DATA[i - 1].co2)));
+  const tOf = i => cum[i] / cum[n] * dur;
+  path.interrupt().attr("stroke-dasharray", `${totalLen} ${totalLen}`).attr("stroke-dashoffset", totalLen)
+    .transition().duration(dur).ease(d3.easeLinear).attr("stroke-dashoffset", 0)
+    .on("end", () => btnFull.click());
+  pts.interrupt().attr("opacity", 0).transition().delay((d, i) => tOf(i)).duration(150).attr("opacity", 1);
+  lbls.interrupt().attr("opacity", 0).transition().delay(d => tOf(DATA.indexOf(d))).duration(300).attr("opacity", 1);
+  gArrows.selectAll("path").interrupt().attr("opacity", 0).transition()
+    .delay(function () { const yr = +this.dataset.year; return tOf(DATA.findIndex(d => d.y === yr) + 1); }).duration(200).attr("opacity", .85);
+}
+btnFull.addEventListener("click", showAll);
+btnPlay.addEventListener("click", play);
+
+// Tabla accesible
+d3.select("#tbl tbody").selectAll("tr").data(DATA).join("tr")
+  .html(d => `<td>${d.y}</td><td>${fPib(d.pib)}</td><td>${fCo2(d.co2)}</td>`);
+</script>
+</body>
+</html>

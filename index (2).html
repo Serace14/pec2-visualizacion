@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nombres de 2024</title>
+<meta name="description" content="Word cloud: los 100 nombres más frecuentes de niñas y de niños nacidos en España en 2024 (INE).">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  :root { --c-m: #2a78d6; --c-h: #eb6834; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --c-m: #3987e5; --c-h: #d95926; } }
+  :root[data-theme="dark"] { --c-m: #3987e5; --c-h: #d95926; }
+  .word { font-family: "Helvetica Neue", Arial, sans-serif; font-weight: 700; cursor: default; transition: opacity .15s; }
+  .dim .word { opacity: .25; }
+  .dim .word.hl { opacity: 1; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin: 18px 0 0; }
+  .kpi { background: var(--surface-1); border: 1px solid var(--grid); border-radius: 10px; padding: 12px 14px; }
+  .kpi .v { font-size: 26px; font-weight: 700; line-height: 1.1; }
+  .kpi .l { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+</style>
+</head>
+<body>
+<main class="page">
+  <div class="crumb"><a href="../">PEC 2 · Visualización de datos</a> › Word cloud</div>
+  <p class="eyebrow">Técnica 1 · Word cloud</p>
+  <h1>Sofía y Mateo encabezan la lista, pero ningún nombre supera el 2,2 % de los nacimientos de 2024</h1>
+  <p class="lede">Los 100 nombres más frecuentes de niñas y los 100 de niños nacidos en España en 2024. El <b>tamaño</b> de cada nombre es proporcional a cuántos bebés lo recibieron (el área de la palabra crece con la frecuencia) y el <b>color</b> indica el sexo. La posición no tiene significado.</p>
+
+  <section class="card">
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Filtrar por sexo">
+        <button type="button" data-f="all" aria-pressed="true">Todos (200)</button>
+        <button type="button" data-f="M" aria-pressed="false">Niñas (100)</button>
+        <button type="button" data-f="H" aria-pressed="false">Niños (100)</button>
+      </div>
+      <div class="legend" style="margin:0 0 0 6px">
+        <span><span class="sw" style="background:var(--c-m)"></span>Niña</span>
+        <span><span class="sw" style="background:var(--c-h)"></span>Niño</span>
+      </div>
+    </div>
+    <div class="chart" id="cloud"><div class="tooltip" id="tip"></div></div>
+  </section>
+
+  <div class="kpis">
+    <div class="kpi"><div class="v">3.325 · 3.289</div><div class="l">bebés llamados Sofía y Mateo, los nombres más puestos (2,2 % y 2,0 % de su sexo)</div></div>
+    <div class="kpi"><div class="v">≈ 52 %</div><div class="l">de los nacimientos lleva uno de los 100 nombres más frecuentes; la otra mitad, un nombre fuera de la lista</div></div>
+    <div class="kpi"><div class="v">263 – 281</div><div class="l">bebés con los nombres que cierran la lista (Fátima y Max): 12 veces menos que el primero</div></div>
+  </div>
+
+  <div class="notes">
+    <div class="note"><h3>Qué se ve</h3><p>Un pequeño grupo de nombres destaca (Sofía, Lucía, Martina, Mateo, Hugo, Martín), seguido de una larga cola de nombres de tamaño parecido: la elección está muy repartida.</p></div>
+    <div class="note"><h3>Tendencia</h3><p>Abundan los nombres cortos, de una o dos sílabas: Leo, Mía, Vega, Alma, Gala, Lola, Noa, Enzo, Luca, Liam. Conviven con los clásicos María, Manuel o Pablo.</p></div>
+    <div class="note"><h3>Cómo leerlo</h3><p>La nube sirve para ver qué domina, no para comparar con precisión: una palabra larga parece mayor que una corta con la misma frecuencia. Los valores exactos están en la tabla y al pasar el ratón.</p></div>
+  </div>
+
+  <details class="table">
+    <summary>Ver los datos en tabla (200 nombres)</summary>
+    <div class="wrap"><table id="tbl"><thead><tr><th>Posición</th><th>Niña</th><th>Frecuencia</th><th>Niño</th><th>Frecuencia</th></tr></thead><tbody></tbody></table></div>
+  </details>
+
+  <p class="source">Fuente: Instituto Nacional de Estadística, <a href="https://www.ine.es/uc/vPHgh7bV" target="_blank" rel="noopener">Nacimientos según el nombre del nacido, año 2024 (datos definitivos)</a>, total nacional. Porcentajes calculados sobre 154.273 niñas y 163.732 niños nacidos en 2024. Los nombres se muestran como los publica el INE, sin tildes. <a href="../datos/nombres_recien_nacidos_2024.csv">Descargar CSV</a>.</p>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-cloud@1.2.7/build/d3.layout.cloud.js"></script>
+<script>
+const RAW = {"tot":{"H":163732,"M":154273},"d":[{"n":"SOFIA","v":3325,"s":"M"},{"n":"LUCIA","v":2830,"s":"M"},{"n":"MARTINA","v":2364,"s":"M"},{"n":"MARIA","v":2189,"s":"M"},{"n":"VEGA","v":2129,"s":"M"},{"n":"JULIA","v":2071,"s":"M"},{"n":"OLIVIA","v":1896,"s":"M"},{"n":"VALERIA","v":1792,"s":"M"},{"n":"MIA","v":1646,"s":"M"},{"n":"EMMA","v":1618,"s":"M"},{"n":"PAULA","v":1527,"s":"M"},{"n":"CARMEN","v":1518,"s":"M"},{"n":"ALMA","v":1431,"s":"M"},{"n":"CARLA","v":1413,"s":"M"},{"n":"LOLA","v":1378,"s":"M"},{"n":"GALA","v":1346,"s":"M"},{"n":"LARA","v":1327,"s":"M"},{"n":"DANIELA","v":1319,"s":"M"},{"n":"SARA","v":1305,"s":"M"},{"n":"JIMENA","v":1280,"s":"M"},{"n":"CHLOE","v":1198,"s":"M"},{"n":"VALENTINA","v":1174,"s":"M"},{"n":"CLAUDIA","v":1146,"s":"M"},{"n":"NOA","v":1107,"s":"M"},{"n":"ALBA","v":1073,"s":"M"},{"n":"LAIA","v":1046,"s":"M"},{"n":"CANDELA","v":983,"s":"M"},{"n":"MANUELA","v":976,"s":"M"},{"n":"VICTORIA","v":960,"s":"M"},{"n":"TRIANA","v":957,"s":"M"},{"n":"ALEJANDRA","v":940,"s":"M"},{"n":"VERA","v":883,"s":"M"},{"n":"ANA","v":880,"s":"M"},{"n":"ELENA","v":860,"s":"M"},{"n":"AITANA","v":847,"s":"M"},{"n":"CARLOTA","v":846,"s":"M"},{"n":"BLANCA","v":832,"s":"M"},{"n":"ZOE","v":815,"s":"M"},{"n":"INES","v":803,"s":"M"},{"n":"ADRIANA","v":789,"s":"M"},{"n":"LIA","v":740,"s":"M"},{"n":"ABRIL","v":736,"s":"M"},{"n":"NORA","v":728,"s":"M"},{"n":"CLARA","v":723,"s":"M"},{"n":"MARINA","v":703,"s":"M"},{"n":"LUNA","v":660,"s":"M"},{"n":"ROCIO","v":654,"s":"M"},{"n":"MARTA","v":625,"s":"M"},{"n":"AMIRA","v":601,"s":"M"},{"n":"ALICIA","v":586,"s":"M"},{"n":"CELIA","v":564,"s":"M"},{"n":"GABRIELA","v":552,"s":"M"},{"n":"EVA","v":498,"s":"M"},{"n":"LAURA","v":498,"s":"M"},{"n":"LEIRE","v":497,"s":"M"},{"n":"ONA","v":475,"s":"M"},{"n":"INDIA","v":472,"s":"M"},{"n":"ARIADNA","v":453,"s":"M"},{"n":"JULIETA","v":442,"s":"M"},{"n":"IRENE","v":437,"s":"M"},{"n":"ALAIA","v":428,"s":"M"},{"n":"ISABEL","v":413,"s":"M"},{"n":"CATALINA","v":408,"s":"M"},{"n":"ISABELLA","v":399,"s":"M"},{"n":"IRIA","v":394,"s":"M"},{"n":"IRIS","v":389,"s":"M"},{"n":"VIOLETA","v":380,"s":"M"},{"n":"ANGELA","v":377,"s":"M"},{"n":"AURORA","v":375,"s":"M"},{"n":"MAR","v":371,"s":"M"},{"n":"AFRICA","v":366,"s":"M"},{"n":"AINA","v":363,"s":"M"},{"n":"DIANA","v":359,"s":"M"},{"n":"CATALEYA","v":357,"s":"M"},{"n":"NOUR","v":354,"s":"M"},{"n":"ANTONELLA","v":353,"s":"M"},{"n":"LINA","v":342,"s":"M"},{"n":"ADARA","v":340,"s":"M"},{"n":"AINARA","v":338,"s":"M"},{"n":"ANDREA","v":335,"s":"M"},{"n":"YASMIN","v":329,"s":"M"},{"n":"AYA","v":326,"s":"M"},{"n":"AINHOA","v":315,"s":"M"},{"n":"ALANA","v":312,"s":"M"},{"n":"MACARENA","v":308,"s":"M"},{"n":"NAIA","v":304,"s":"M"},{"n":"JANA","v":293,"s":"M"},{"n":"ELSA","v":291,"s":"M"},{"n":"LAYAN","v":289,"s":"M"},{"n":"ARIA","v":283,"s":"M"},{"n":"ELIA","v":282,"s":"M"},{"n":"HELENA","v":282,"s":"M"},{"n":"CAMILA","v":281,"s":"M"},{"n":"MAIA","v":273,"s":"M"},{"n":"AMELIA","v":271,"s":"M"},{"n":"AROA","v":269,"s":"M"},{"n":"LEYRE","v":268,"s":"M"},{"n":"NEREA","v":266,"s":"M"},{"n":"TERESA","v":264,"s":"M"},{"n":"FATIMA","v":263,"s":"M"},{"n":"MATEO","v":3289,"s":"H"},{"n":"HUGO","v":2734,"s":"H"},{"n":"MARTIN","v":2693,"s":"H"},{"n":"LEO","v":2550,"s":"H"},{"n":"MANUEL","v":2411,"s":"H"},{"n":"LUCAS","v":2228,"s":"H"},{"n":"PABLO","v":2158,"s":"H"},{"n":"ALEJANDRO","v":2136,"s":"H"},{"n":"ENZO","v":2028,"s":"H"},{"n":"ALVARO","v":1949,"s":"H"},{"n":"DANIEL","v":1945,"s":"H"},{"n":"THIAGO","v":1644,"s":"H"},{"n":"LUCA","v":1533,"s":"H"},{"n":"GONZALO","v":1510,"s":"H"},{"n":"MARIO","v":1455,"s":"H"},{"n":"LIAM","v":1399,"s":"H"},{"n":"ADRIAN","v":1379,"s":"H"},{"n":"OLIVER","v":1340,"s":"H"},{"n":"BRUNO","v":1333,"s":"H"},{"n":"DIEGO","v":1232,"s":"H"},{"n":"GAEL","v":1226,"s":"H"},{"n":"NICOLAS","v":1223,"s":"H"},{"n":"ALEX","v":1182,"s":"H"},{"n":"MARCOS","v":1116,"s":"H"},{"n":"DAVID","v":1100,"s":"H"},{"n":"MARCO","v":1076,"s":"H"},{"n":"ANTONIO","v":1073,"s":"H"},{"n":"JUAN","v":1054,"s":"H"},{"n":"MIGUEL","v":1053,"s":"H"},{"n":"GABRIEL","v":1039,"s":"H"},{"n":"JAVIER","v":1013,"s":"H"},{"n":"IZAN","v":971,"s":"H"},{"n":"RODRIGO","v":957,"s":"H"},{"n":"MARC","v":908,"s":"H"},{"n":"JOSE","v":900,"s":"H"},{"n":"ANGEL","v":896,"s":"H"},{"n":"CARLOS","v":886,"s":"H"},{"n":"DYLAN","v":880,"s":"H"},{"n":"DARIO","v":862,"s":"H"},{"n":"NOAH","v":847,"s":"H"},{"n":"ADAM","v":830,"s":"H"},{"n":"JAIME","v":727,"s":"H"},{"n":"SAMUEL","v":696,"s":"H"},{"n":"NICO","v":686,"s":"H"},{"n":"SANTIAGO","v":674,"s":"H"},{"n":"PAU","v":631,"s":"H"},{"n":"GUILLERMO","v":625,"s":"H"},{"n":"JORGE","v":622,"s":"H"},{"n":"HECTOR","v":609,"s":"H"},{"n":"ERIC","v":595,"s":"H"},{"n":"LUIS","v":582,"s":"H"},{"n":"FRANCISCO","v":563,"s":"H"},{"n":"AMIR","v":551,"s":"H"},{"n":"IKER","v":548,"s":"H"},{"n":"JESUS","v":545,"s":"H"},{"n":"VICTOR","v":545,"s":"H"},{"n":"SERGIO","v":541,"s":"H"},{"n":"MATIAS","v":530,"s":"H"},{"n":"AARON","v":519,"s":"H"},{"n":"PEDRO","v":509,"s":"H"},{"n":"RAFAEL","v":508,"s":"H"},{"n":"MOHAMED","v":500,"s":"H"},{"n":"IAN","v":495,"s":"H"},{"n":"JULEN","v":490,"s":"H"},{"n":"BIEL","v":485,"s":"H"},{"n":"UNAI","v":471,"s":"H"},{"n":"NIL","v":458,"s":"H"},{"n":"SAUL","v":456,"s":"H"},{"n":"MARTI","v":445,"s":"H"},{"n":"ARES","v":437,"s":"H"},{"n":"ISAAC","v":430,"s":"H"},{"n":"ALONSO","v":419,"s":"H"},{"n":"RUBEN","v":413,"s":"H"},{"n":"IVAN","v":403,"s":"H"},{"n":"ERIK","v":402,"s":"H"},{"n":"ALAN","v":398,"s":"H"},{"n":"POL","v":393,"s":"H"},{"n":"ALEIX","v":380,"s":"H"},{"n":"FERNANDO","v":379,"s":"H"},{"n":"RAYAN","v":362,"s":"H"},{"n":"JAN","v":360,"s":"H"},{"n":"IGNACIO","v":359,"s":"H"},{"n":"JOEL","v":358,"s":"H"},{"n":"ALBERTO","v":353,"s":"H"},{"n":"ARNAU","v":352,"s":"H"},{"n":"ANDER","v":349,"s":"H"},{"n":"ISMAEL","v":346,"s":"H"},{"n":"LUKA","v":345,"s":"H"},{"n":"FABIO","v":339,"s":"H"},{"n":"RAUL","v":332,"s":"H"},{"n":"KAI","v":330,"s":"H"},{"n":"NEIZAN","v":323,"s":"H"},{"n":"ANDRES","v":319,"s":"H"},{"n":"ADAY","v":316,"s":"H"},{"n":"ARAN","v":307,"s":"H"},{"n":"TOMAS","v":306,"s":"H"},{"n":"MAXIMO","v":302,"s":"H"},{"n":"ELIAS","v":301,"s":"H"},{"n":"AXEL","v":298,"s":"H"},{"n":"MAX","v":281,"s":"H"}]};
+const TOT = RAW.tot, DATA = RAW.d;
+const es = d3.formatLocale({decimal: ",", thousands: ".", grouping: [3], currency: ["", ""]});
+const fInt = es.format(",.0f"), fPct = es.format(".2f");
+const title = s => s.charAt(0) + s.slice(1).toLowerCase();
+const rank = {};
+["M", "H"].forEach(s => DATA.filter(d => d.s === s).forEach((d, i) => rank[s + d.n] = i + 1));
+
+const W = 1000, H = 600;
+const svg = d3.select("#cloud").append("svg").attr("viewBox", `0 0 ${W} ${H}`)
+  .attr("role", "img").attr("aria-label", "Nube de palabras de los nombres más frecuentes de recién nacidos en España en 2024");
+const g = svg.append("g").attr("transform", `translate(${W / 2},${H / 2})`);
+const tip = d3.select("#tip");
+
+// Generador pseudoaleatorio con semilla: la disposición es siempre la misma (reproducible)
+function seeded(seed) { return () => (seed = (seed * 16807) % 2147483647) / 2147483647; }
+
+function draw(filter, k = 1) {
+  const words = DATA.filter(d => filter === "all" || d.s === filter);
+  const maxV = d3.max(DATA, d => d.v);
+  // Raíz cuadrada: el área de la palabra (≈ tamaño²) queda proporcional a la frecuencia
+  const size = d3.scaleSqrt().domain([0, maxV]).range([0, (filter === "all" ? 60 : 84) * k]);
+  d3.layout.cloud().size([W, H])
+    .words(words.map(d => ({...d, text: title(d.n), size: size(d.v)})))
+    .padding(3.5).rotate(0).font('"Helvetica Neue", Arial, sans-serif').fontWeight(700)
+    .fontSize(d => d.size).random(seeded(7)).spiral("archimedean")
+    .on("end", placed => {
+      // si no caben todas, se reduce la escala completa (nunca se descartan palabras)
+      if (placed.length < words.length && k > 0.5) draw(filter, k * 0.94);
+      else render(placed, words.length);
+    }).start();
+}
+
+function render(placed, n) {
+  if (placed.length < n) console.warn(`Colocadas ${placed.length} de ${n} palabras`);
+  const sel = g.selectAll("text").data(placed, d => d.s + d.n);
+  sel.exit().transition().duration(250).attr("opacity", 0).remove();
+  sel.enter().append("text").attr("class", "word").attr("text-anchor", "middle")
+      .attr("transform", d => `translate(${d.x},${d.y})`).attr("opacity", 0)
+    .merge(sel)
+      .text(d => d.text).style("font-size", d => d.size + "px")
+      .attr("fill", d => d.s === "M" ? "var(--c-m)" : "var(--c-h)")
+      .on("pointerenter", function (ev, d) {
+        svg.classed("dim", true); d3.select(this).classed("hl", true);
+        const total = d.s === "M" ? TOT.M : TOT.H;
+        tip.html(`<b>${d.text}</b> · ${d.s === "M" ? "niña" : "niño"}, puesto ${rank[d.s + d.n]}<br><b>${fInt(d.v)}</b> bebés · ${fPct(d.v / total * 100)} % de los ${d.s === "M" ? "niñas" : "niños"} nacidos`)
+          .style("opacity", 1);
+        place(ev);
+      })
+      .on("pointermove", place)
+      .on("pointerleave", function () { svg.classed("dim", false); d3.select(this).classed("hl", false); tip.style("opacity", 0); })
+    .transition().duration(400)
+      .attr("transform", d => `translate(${d.x},${d.y})`).attr("opacity", 1);
+}
+function place(ev) {
+  const box = document.getElementById("cloud").getBoundingClientRect();
+  let left = ev.clientX - box.left + 14, top = ev.clientY - box.top - 14;
+  if (left + 270 > box.width) left -= 290;
+  tip.style("left", left + "px").style("top", top + "px");
+}
+
+document.querySelectorAll("[data-f]").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("[data-f]").forEach(x => x.setAttribute("aria-pressed", x === b));
+  draw(b.dataset.f);
+}));
+draw("all");
+
+// Tabla accesible
+const girls = DATA.filter(d => d.s === "M"), boys = DATA.filter(d => d.s === "H");
+d3.select("#tbl tbody").selectAll("tr").data(d3.range(100)).join("tr")
+  .html(i => `<td>${i + 1}</td><td style="text-align:left">${title(girls[i].n)}</td><td>${fInt(girls[i].v)}</td><td style="text-align:left">${title(boys[i].n)}</td><td>${fInt(boys[i].v)}</td>`);
+</script>
+</body>
+</html>

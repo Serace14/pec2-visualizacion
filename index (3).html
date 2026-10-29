@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PEC 2 Visualización</title>
+<meta name="description" content="PEC 2 de Visualización de datos (UOC): word cloud, Gantt chart y connected scatterplot con datos abiertos.">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  .grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 8px; }
+  a.tile { display: block; text-decoration: none; color: inherit; background: var(--surface-1); border: 1px solid var(--grid); border-radius: 12px; padding: 18px; transition: border-color .15s, transform .15s; }
+  a.tile:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .tile .k { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-muted); }
+  .tile h2 { font-size: 20px; margin: 6px 0 6px; }
+  .tile p { margin: 0 0 10px; color: var(--text-secondary); font-size: 14px; }
+  .tile .d { font-size: 13px; color: var(--text-muted); }
+  .tile .go { margin-top: 12px; font-size: 14px; color: var(--accent); font-weight: 600; }
+</style>
+</head>
+<body>
+<main class="page">
+  <p class="eyebrow">Máster en Ciencia de Datos · UOC · Visualización de datos</p>
+  <h1>PEC 2 · Tres técnicas, tres conjuntos de datos abiertos</h1>
+  <p class="lede">Sergio Jiménez Frago. Cada visualización parte de la técnica asignada y busca los datos cuya estructura encaja con ella. Todas son interactivas: pasa el ratón por las marcas para ver los valores.</p>
+  <div class="grid3">
+    <a class="tile" href="word-cloud/">
+      <div class="k">Grupo I · Básica y popular</div>
+      <h2>Word cloud</h2>
+      <p>Los 200 nombres más puestos a los recién nacidos en España en 2024.</p>
+      <div class="d">Datos: INE, nacimientos según el nombre del nacido (2024)</div>
+      <div class="go">Ver visualización →</div>
+    </a>
+    <a class="tile" href="gantt/">
+      <div class="k">Grupo II · Habitual y específica</div>
+      <h2>Gantt chart</h2>
+      <p>Calendario de siembra, floración y recolección de 17 cultivos en España.</p>
+      <div class="d">Datos: Ministerio de Agricultura, calendario 2014–2016</div>
+      <div class="go">Ver visualización →</div>
+    </a>
+    <a class="tile" href="connected-scatterplot/">
+      <div class="k">Grupo III · Menos habitual</div>
+      <h2>Connected scatterplot</h2>
+      <p>Trayectoria del PIB per cápita y las emisiones de CO₂ per cápita en España, 1960–2022.</p>
+      <div class="d">Datos: Our World in Data (Maddison Project, Global Carbon Budget)</div>
+      <div class="go">Ver visualización →</div>
+    </a>
+  </div>
+  <p class="source">Herramienta: páginas estáticas con D3.js, publicadas en GitHub Pages. Los datos usados en cada gráfico pueden descargarse en CSV desde su página.</p>
+</main>
+</body>
+</html>

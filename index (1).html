@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calendario agrícola de España</title>
+<meta name="description" content="Gantt chart: calendario de siembra, floración y recolección de 17 cultivos en España (MAPA, 2014–2016).">
+<link rel="stylesheet" href="../assets/style.css">
+<style>
+  :root { --c-siembra: #2a78d6; --c-flor: #1baf7a; --c-cosecha: #eb6834; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --c-siembra: #3987e5; --c-flor: #199e70; --c-cosecha: #d95926; } }
+  :root[data-theme="dark"] { --c-siembra: #3987e5; --c-flor: #199e70; --c-cosecha: #d95926; }
+  .grp { font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; fill: var(--text-muted); }
+  .crop { font-size: 13px; fill: var(--text-primary); }
+  .month-lbl { font-size: 12px; fill: var(--text-muted); text-anchor: middle; }
+  .month-sep { stroke: var(--grid); }
+  .row-band { fill: var(--text-primary); opacity: 0; }
+  .row-band.on { opacity: .05; }
+  .peak { font-size: 10.5px; font-weight: 600; fill: var(--text-secondary); }
+  .strip-lbl { font-size: 12px; fill: var(--text-secondary); }
+  .strip-val { font-size: 11px; fill: var(--text-secondary); text-anchor: middle; font-variant-numeric: tabular-nums; }
+  .legend .grad { display: inline-block; width: 60px; height: 10px; border-radius: 5px; vertical-align: -1px; margin: 0 6px;
+                  background: linear-gradient(90deg, color-mix(in srgb, var(--text-secondary) 20%, transparent), var(--text-secondary)); }
+  .chart-scroll { overflow-x: auto; }
+  .chart-scroll svg { min-width: 760px; }
+</style>
+</head>
+<body>
+<main class="page">
+  <div class="crumb"><a href="../">PEC 2 · Visualización de datos</a> › Gantt chart</div>
+  <p class="eyebrow">Técnica 2 · Gantt chart</p>
+  <h1>La cosecha se escalona de junio a enero: primero los cereales, después la vid y el arroz, y al final los cítricos y el olivo</h1>
+  <p class="lede">Cada fila es un cultivo y cada barra una fase de su ciclo: <b>siembra</b> (o <b>floración</b> en los leñosos) y <b>recolección</b>. La barra va del primer al último mes con actividad, y su intensidad indica qué parte de la superficie o de la cosecha anual corresponde a cada mes (más intenso = más cerca del mes punta).</p>
+
+  <section class="card">
+    <div class="legend" role="list">
+      <span role="listitem"><span class="sw" style="background:var(--c-siembra)"></span>Siembra</span>
+      <span role="listitem"><span class="sw" style="background:var(--c-flor)"></span>Floración (cultivos leñosos)</span>
+      <span role="listitem"><span class="sw" style="background:var(--c-cosecha)"></span>Recolección</span>
+      <span role="listitem">intensidad = % del total anual en ese mes (cifra: mes punta)</span>
+    </div>
+    <div class="chart chart-scroll" id="chart"><div class="tooltip" id="tip"></div></div>
+  </section>
+
+  <div class="notes">
+    <div class="note"><h3>Cereales de invierno</h3><p>Se siembran en otoño (octubre–diciembre) y se cosechan en verano (junio–julio): ocho meses de ciclo que cruzan el cambio de año.</p></div>
+    <div class="note"><h3>Cultivos de verano</h3><p>Maíz, girasol, arroz y algodón se siembran en primavera (marzo–mayo) y se recogen a partir de agosto; el arroz y el algodón concentran su cosecha en septiembre–octubre.</p></div>
+    <div class="note"><h3>Leñosos</h3><p>Florecen casi todos en primavera, pero cosechan en momentos distintos: almendro y vid en septiembre, cítricos y olivo entre noviembre y enero.</p></div>
+    <div class="note"><h3>Calendario de trabajo</h3><p>Primavera concentra siembras y floraciones; la recolección empieza con los cereales en junio y termina con el olivo en enero, lo que reparte la demanda de mano de obra y maquinaria.</p></div>
+  </div>
+
+  <details class="table">
+    <summary>Ver los datos en tabla (% del total anual por mes)</summary>
+    <div class="wrap"><table id="tbl"></table></div>
+  </details>
+
+  <p class="source">Fuente: Ministerio de Agricultura, Pesca y Alimentación, <a href="https://www.mapa.gob.es/es/estadistica/temas/estadisticas-agrarias/agricultura/calendarios-siembras-recoleccion" target="_blank" rel="noopener">Calendario de siembra, recolección y comercialización 2014–2016</a>, resultados nacionales. Siembra y floración: % de la superficie (ha) por mes; recolección: % de la producción (t) por mes. Selección de 17 de los 159 cultivos, los de mayor superficie de cada grupo (se excluyen flores y ornamentales). <a href="../datos/calendario_cultivos_espana_2014_2016.csv">Descargar CSV</a>.</p>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+const DATA = [{"grupo":"Cereales de invierno","cultivo":"Trigo blando","original":"Trigo semiduro y blando","fases":[{"fase":"Siembra","pct":[4,0,0,1,0,0,0,0,0,39,41,15],"total":1836101,"unidad":"ha"},{"fase":"Recolección","pct":[0,0,0,0,1,19,59,21,0,0,0,0],"total":5959418,"unidad":"tn"}]},{"grupo":"Cereales de invierno","cultivo":"Trigo duro","original":"Trigo duro","fases":[{"fase":"Siembra","pct":[5,0,0,0,0,0,0,0,0,7,41,47],"total":364446,"unidad":"ha"},{"fase":"Recolección","pct":[0,0,0,0,6,58,33,3,0,0,0,0],"total":936165,"unidad":"tn"}]},{"grupo":"Cereales de invierno","cultivo":"Cebada","original":"Cebada cervecera (2 carreras)","fases":[{"fase":"Siembra","pct":[7,3,0,0,0,0,0,0,1,21,49,19],"total":2293086,"unidad":"ha"},{"fase":"Recolección","pct":[0,0,0,0,2,38,53,7,0,0,0,0],"total":6824032,"unidad":"tn"}]},{"grupo":"Cereales de invierno","cultivo":"Avena","original":"Avena","fases":[{"fase":"Siembra","pct":[6,2,1,0,0,0,0,0,19,30,34,8],"total":474778,"unidad":"ha"},{"fase":"Recolección","pct":[0,0,0,0,5,56,31,8,0,0,0,0],"total":847116,"unidad":"tn"}]},{"grupo":"Cultivos de verano","cultivo":"Maíz","original":"Maíz híbrido","fases":[{"fase":"Siembra","pct":[0,1,8,39,43,9,0,0,0,0,0,0],"total":383794,"unidad":"ha"},{"fase":"Recolección","pct":[6,4,2,0,0,0,0,2,10,27,30,19],"total":4374243,"unidad":"tn"}]},{"grupo":"Cultivos de verano","cultivo":"Girasol","original":"Girasol","fases":[{"fase":"Siembra","pct":[0,16,19,17,36,10,2,0,0,0,0,0],"total":746662,"unidad":"ha"},{"fase":"Recolección","pct":[0,0,0,0,0,0,3,37,21,32,7,0],"total":831462,"unidad":"tn"}]},{"grupo":"Cultivos de verano","cultivo":"Arroz (japónica)","original":"Arroz Japónica","fases":[{"fase":"Siembra","pct":[0,0,0,15,83,2,0,0,0,0,0,0],"total":67303,"unidad":"ha"},{"fase":"Recolección","pct":[0,0,0,0,0,0,0,0,47,46,7,0],"total":502478,"unidad":"tn"}]},{"grupo":"Cultivos de verano","cultivo":"Algodón","original":"Algodón ( bruto )","fases":[{"fase":"Siembra","pct":[0,0,34,61,5,0,0,0,0,0,0,0],"total":66135,"unidad":"ha"},{"fase":"Recolección","pct":[0,0,0,0,0,0,0,0,15,71,14,0],"total":191925,"unidad":"tn"}]},{"grupo":"Forrajes y hortícolas","cultivo":"Alfalfa","original":"Alfalfa","fases":[{"fase":"Siembra","pct":[0,5,25,10,5,0,0,2,42,10,1,0],"total":258844,"unidad":"ha"},{"fase":"Recolección","pct":[0,0,1,7,18,19,20,16,14,4,1,0],"total":10320912,"unidad":"tn"}]},{"grupo":"Forrajes y hortícolas","cultivo":"Tomate (verano)","original":"Tomate de recolección 1-VI al 30- IX","fases":[{"fase":"Siembra","pct":[2,3,26,60,8,1,0,0,0,0,0,0],"total":41717,"unidad":"ha"},{"fase":"Recolección","pct":[0,0,0,0,0,10,15,45,29,1,0,0],"total":3365663,"unidad":"tn"}]},{"grupo":"Forrajes y hortícolas","cultivo":"Patata (media estación)","original":"Patata media estación (15 Jun-30 Sep)","fases":[{"fase":"Siembra","pct":[2,6,36,45,11,0,0,0,0,0,0,0],"total":30656,"unidad":"ha"},{"fase":"Recolección","pct":[0,0,0,0,0,6,16,21,32,25,0,0],"total":895584,"unidad":"tn"}]},{"grupo":"Leñosos","cultivo":"Almendro","original":"Almendro","fases":[{"fase":"Floración","pct":[7,46,45,2,0,0,0,0,0,0,0,0],"total":491280,"unidad":"ha"},{"fase":"Recolección","pct":[0,0,0,0,0,0,2,19,55,20,3,1],"total":201852,"unidad":"tn"}]},{"grupo":"Leñosos","cultivo":"Olivo (almazara)","original":"Olivar de aceituna de almazara","fases":[{"fase":"Floración","pct":[0,0,0,11,69,20,0,0,0,0,0,0],"total":2264286,"unidad":"ha"},{"fase":"Recolección","pct":[30,12,2,0,0,0,0,0,0,1,16,39],"total":5839967,"unidad":"tn"}]},{"grupo":"Leñosos","cultivo":"Vid (vinificación)","original":"Viñedo de uva de vinificación","fases":[{"fase":"Floración","pct":[0,0,0,8,33,58,1,0,0,0,0,0],"total":869805,"unidad":"ha"},{"fase":"Recolección","pct":[0,0,0,0,0,0,0,10,66,23,1,0],"total":5812357,"unidad":"tn"}]},{"grupo":"Leñosos","cultivo":"Melocotonero","original":"Melocotonero","fases":[{"fase":"Floración","pct":[0,10,54,26,10,0,0,0,0,0,0,0],"total":45029,"unidad":"ha"},{"fase":"Recolección","pct":[0,0,0,2,15,17,23,23,15,4,1,0],"total":932763,"unidad":"tn"}]},{"grupo":"Leñosos","cultivo":"Naranjo (Navelina)","original":"Naranjo dulce Navel Navelina","fases":[{"fase":"Floración","pct":[0,0,14,74,12,0,0,0,0,0,0,0],"total":40796,"unidad":"ha"},{"fase":"Recolección","pct":[5,2,0,0,0,0,0,0,0,24,37,32],"total":1080408,"unidad":"tn"}]},{"grupo":"Leñosos","cultivo":"Mandarino (clementinas)","original":"Mandarino Clementinas","fases":[{"fase":"Floración","pct":[0,0,11,69,20,0,0,0,0,0,0,0],"total":69629,"unidad":"ha"},{"fase":"Recolección","pct":[5,0,0,0,0,0,0,0,7,17,36,35],"total":1544379,"unidad":"tn"}]}]
+;
+const MESES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+const MESES_L = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+const COLOR = {"Siembra": "var(--c-siembra)", "Floración": "var(--c-flor)", "Recolección": "var(--c-cosecha)"};
+const es = d3.formatLocale({decimal: ",", thousands: ".", grouping: [3], currency: ["", ""]});
+const fInt = es.format(",.0f");
+
+// Disposición: cabecera de grupo + filas de cultivo; cada cultivo tiene dos carriles (fase A arriba, recolección abajo)
+const W = 1000, LEFT = 190, RIGHT = 16, TOP = 30, LANE = 11, LANE_GAP = 3, ROW_PAD = 9, GRP_H = 26;
+const ROW_H = LANE * 2 + LANE_GAP + ROW_PAD * 2;
+const colW = (W - LEFT - RIGHT) / 12;
+const xm = i => LEFT + i * colW;
+
+let yCursor = TOP + 8; const layout = [];
+d3.groups(DATA, d => d.grupo).forEach(([g, rows]) => {
+  layout.push({type: "grp", g, y: yCursor + 17}); yCursor += GRP_H;
+  rows.forEach(r => { layout.push({type: "row", r, y: yCursor}); yCursor += ROW_H; });
+});
+const STRIP_TOP = yCursor + 22, STRIP_H = 46, H = STRIP_TOP + STRIP_H + 40;
+
+const svg = d3.select("#chart").append("svg").attr("viewBox", `0 0 ${W} ${H}`)
+  .attr("role", "img").attr("aria-label", "Diagrama de Gantt del calendario de siembra, floración y recolección de 17 cultivos en España");
+const defs = svg.append("defs");
+
+// Rejilla de meses y etiquetas
+MESES.forEach((m, i) => svg.append("text").attr("class", "month-lbl").attr("x", xm(i) + colW / 2).attr("y", TOP - 8).text(m));
+d3.range(13).forEach(i => svg.append("line").attr("class", "month-sep").attr("x1", xm(i)).attr("x2", xm(i)).attr("y1", TOP).attr("y2", yCursor));
+
+const tip = d3.select("#tip");
+let gid = 0;
+layout.forEach(item => {
+  if (item.type === "grp") { svg.append("text").attr("class", "grp").attr("x", 0).attr("y", item.y).text(item.g); return; }
+  const r = item.r, g = svg.append("g");
+  const band = g.append("rect").attr("class", "row-band").attr("x", 0).attr("y", item.y).attr("width", W).attr("height", ROW_H).attr("rx", 6);
+  g.append("text").attr("class", "crop").attr("x", 10).attr("y", item.y + ROW_H / 2 + 4.5).text(r.cultivo);
+  r.fases.forEach((f, li) => {
+    const yy = item.y + ROW_PAD + li * (LANE + LANE_GAP);
+    const maxP = d3.max(f.pct);
+    const op = p => p === 0 ? 0 : 0.2 + 0.8 * p / maxP; // intensidad relativa al mes punta de esa fase
+    // tramos contiguos de meses con actividad = barras del Gantt
+    const runs = []; let s = null;
+    f.pct.forEach((p, i) => { if (p > 0 && s === null) s = i; if ((p === 0 || i === 11) && s !== null) { runs.push([s, p > 0 && i === 11 ? 11 : i - 1]); s = null; } });
+    runs.forEach(([a, b]) => {
+      const id = "g" + (gid++);
+      const lg = defs.append("linearGradient").attr("id", id).attr("x1", 0).attr("x2", 1).attr("y1", 0).attr("y2", 0);
+      for (let i = a; i <= b; i++) {
+        const o0 = (i - a) / (b - a + 1), o1 = (i - a + 1) / (b - a + 1);
+        lg.append("stop").attr("offset", o0).attr("stop-color", COLOR[f.fase]).attr("stop-opacity", op(f.pct[i]));
+        lg.append("stop").attr("offset", o1).attr("stop-color", COLOR[f.fase]).attr("stop-opacity", op(f.pct[i]));
+      }
+      g.append("rect").attr("x", xm(a) + 1).attr("y", yy).attr("width", (b - a + 1) * colW - 2).attr("height", LANE)
+        .attr("rx", 4).attr("fill", `url(#${id})`);
+    });
+    // cifra del mes punta (etiquetado selectivo)
+    const pk = f.pct.indexOf(maxP);
+    g.append("text").attr("class", "peak").attr("x", xm(pk) + colW / 2).attr("y", yy + LANE - 1.5).attr("text-anchor", "middle")
+      .style("fill", "#fff").text(maxP + "%");
+    // celdas de interacción, mayores que la marca
+    f.pct.forEach((p, i) => {
+      if (!p) return;
+      g.append("rect").attr("x", xm(i)).attr("y", yy - 1.5).attr("width", colW).attr("height", LANE + 3).attr("fill", "transparent")
+        .on("pointerenter", ev => {
+          band.classed("on", true);
+          const unidad = f.unidad === "ha" ? "de la superficie" : "de la producción";
+          tip.html(`<b>${r.cultivo}</b> · ${f.fase.toLowerCase()}<br>${MESES_L[i]}: <b>${p} %</b> ${unidad}<br><span class="muted">Total anual: ${fInt(f.total)} ${f.unidad === "tn" ? "t" : f.unidad}</span>`)
+            .style("opacity", 1);
+          place(ev);
+        })
+        .on("pointermove", place)
+        .on("pointerleave", () => { band.classed("on", false); tip.style("opacity", 0); });
+    });
+  });
+});
+function place(ev) {
+  const box = document.getElementById("chart").getBoundingClientRect();
+  let left = ev.clientX - box.left + 14, top = ev.clientY - box.top - 12;
+  if (left + 240 > box.width) left -= 260;
+  tip.style("left", left + "px").style("top", top + "px");
+}
+
+// Franja resumen: cuántos cultivos tienen ≥ 10 % de su cosecha en cada mes
+const counts = d3.range(12).map(i => DATA.filter(r => r.fases.find(f => f.fase === "Recolección").pct[i] >= 10).length);
+svg.append("text").attr("class", "strip-lbl").attr("x", 0).attr("y", STRIP_TOP + 14).text("Cultivos en plena");
+svg.append("text").attr("class", "strip-lbl").attr("x", 0).attr("y", STRIP_TOP + 30).text("recolección (≥ 10 %)");
+const ys = d3.scaleLinear().domain([0, d3.max(counts)]).range([0, STRIP_H - 14]);
+counts.forEach((c, i) => {
+  const h = ys(c);
+  svg.append("rect").attr("x", xm(i) + colW * 0.2).attr("y", STRIP_TOP + STRIP_H - h).attr("width", colW * 0.6).attr("height", h)
+    .attr("rx", 3).attr("fill", "var(--c-cosecha)").attr("opacity", .85);
+  svg.append("text").attr("class", "strip-val").attr("x", xm(i) + colW / 2).attr("y", STRIP_TOP + STRIP_H - h - 4).text(c);
+});
+svg.append("line").attr("x1", LEFT).attr("x2", W - RIGHT).attr("y1", STRIP_TOP + STRIP_H).attr("y2", STRIP_TOP + STRIP_H).attr("stroke", "var(--axis)");
+MESES.forEach((m, i) => svg.append("text").attr("class", "month-lbl").attr("x", xm(i) + colW / 2).attr("y", STRIP_TOP + STRIP_H + 16).text(m));
+
+// Tabla accesible
+const tbl = d3.select("#tbl");
+tbl.append("thead").append("tr").html("<th>Cultivo</th><th>Fase</th>" + MESES.map(m => `<th>${m}</th>`).join(""));
+tbl.append("tbody").selectAll("tr").data(DATA.flatMap(r => r.fases.map(f => ({r, f})))).join("tr")
+  .html(({r, f}) => `<td>${r.cultivo}</td><td style="text-align:left">${f.fase}</td>` + f.pct.map(p => `<td>${p || ""}</td>`).join(""));
+</script>
+</body>
+</html>
